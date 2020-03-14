@@ -297,8 +297,9 @@ module Lecture03 where
     - not true -> not (λa.λb.a) ->> λa.λb.b
     - not false ->> true
 -}
+
 not :: String
-not = "notimplemented"
+not = "\\x.x false true"
 
 {-
   Напишите терм `and`:
@@ -309,7 +310,7 @@ not = "notimplemented"
     - and false false ->> false
 -}
 and :: String
-and = "notimplemented"
+and = "\\x.\\y.x y false"
 
 {-
   Напишите терм `or`:
@@ -320,7 +321,7 @@ and = "notimplemented"
     - or false false ->> false
 -}
 or :: String
-or = "notimplemented"
+or = "\\x.\\y.x true y"
 -- </Задачи для самостоятельного решения>
 
 {-
@@ -373,7 +374,7 @@ or = "notimplemented"
   isZero n = False
 -}
 isZero :: String
-isZero = "notimplemented"
+isZero = "\\n. n (\\x. false) true"
 
 -- </Задачи для самостоятельного решения>
 
@@ -436,7 +437,20 @@ isZero = "notimplemented"
         ->>β  (mult 2 (fact (pred 2))))
         ->>β  (mult 2 (fact 1)))
         ->>β  (mult 2 (F fact 1)))
-        ->>β  ...
+        ->>β  (mult 2 ((λf.λn.ifelse (iszero n) (1) (mult n (f (pred n)))) fact 1))
+        ->>β  (mult 2 ((ifelse (iszero 1) (1) (mult 1 (fact (pred 1))))))
+        ->>β  (mult 2 ((ifelse (iszero False) (1) (mult 1 (fact (pred 1))))))
+        ->>β  (mult 2 (mult 1 (fact (pred 1))))
+        ->>β  (mult 2 (mult 1 (fact 0)))
+        ->>β  (mult 2 (mult 1 (F fact 0)))
+        ->>β  (mult 2 (mult 1 ((λf.λn.ifelse (iszero n) (1) (mult n (f (pred n)))) fact 0)))
+        ->>β  (mult 2 (mult 1 (ifelse (iszero 0) (1) (mult 0 (fact (pred 0))))))
+        ->>β  (mult 2 (mult 1 (ifelse (True) (1) (mult 0 (fact (pred 0))))))
+        ->>β  (mult 2 (mult 1 (1)))
+        ->>β  (mult 2 (mult 1 1))
+        ->>β  (mult 2 1)
+        ->>β  (2)
+        ->>β  2
 
   Рекомендуем довести до конца самостоятельно.
 -}
@@ -444,6 +458,8 @@ isZero = "notimplemented"
 -- <Задачи для самостоятельного решения>
 
 {-
+  pred = λa b c. ((a (λd e.e (d b))) (λd.c)) (λd.d)
+
   Используя Y-комбинатор напишите функцию для вычисления чисел Фибоначчи: 
     
     f(n) = f(n-1) + f(n-2)
@@ -457,9 +473,11 @@ isZero = "notimplemented"
   Для решения вам понадобятся уже известные функции succ, plus, iszero, а так же функция новая функция pred.
   Мы не будем приводить её определение. Попробуйте запустить её для нескольких нумералов.
   Что она возвращает? Чему равен pred pred 1?
+
+  pred = λn s z. snd (n (λp . pair (s (fst p)) (fst p)) (pair z z))
 -}
 fib :: String
-fib = "notimplemented"
+fib = "\\n.ifelse (iszero n) (1) (ifelse (iszero (pred n)) (2) (plus (fib (pred (pred n))) (fib (pred n))))"
 
 -- </Задачи для самостоятельного решения>
 
