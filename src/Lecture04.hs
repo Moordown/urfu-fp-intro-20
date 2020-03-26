@@ -328,10 +328,10 @@ newtype AdoptedAnimal = AdoptedAnimal
     - Month
     - Year
 -}
-newtype DayInt = DayInt { getDayInt :: Int} deriving (Eq, Show)
-newtype MonthInt = MonthInt { getMonthInt :: Int} deriving (Eq, Show)
-newtype YearInt = YearInt { getYearInt :: Int} deriving (Eq, Show)
-showDate :: DayInt -> MonthInt -> YearInt -> String
+newtype Day = DayInt { getDay :: Int} deriving (Eq, Show)
+newtype Month = MonthInt { getMonth :: Int} deriving (Eq, Show)
+newtype Year = YearInt { getYear :: Int} deriving (Eq, Show)
+showDate :: Day -> Month -> Year -> String
 showDate day month year =
   "Day " ++ show day ++ " of " ++ show month ++ " month, year " ++ show year
 
@@ -372,7 +372,6 @@ showDate day month year =
   - uncons [1,2,3] ~> (Just 1, [2, 3])
 -}
 uncons :: [a] -> (Maybe a, [a])
-uncons (f:[]) = (Just f, [])
 uncons (f:s) = (Just f, s)
 uncons [] = (Nothing, [])
 
@@ -487,7 +486,7 @@ adopt duck@(AnimalWithType _ _ Duck) = Left "Quack"
 
     data (a, b) = (a, b)
 
-  3. |Maybe a| = |a|
+  3. |Maybe a| = | Nothing | Just a| = |Nothing| + |Just a| = 1 + |a|
 
     data Maybe a = Nothing | Just a
 
@@ -566,7 +565,7 @@ insert v (Node val@(Just value) l r) = case compare v value of
   LT -> Node val (Just (insert v (createEmptyIfNothing l))) r
   EQ -> Node val (Just (insert v (createEmptyIfNothing l))) r
   GT -> Node val l (Just (insert v (createEmptyIfNothing r)))
-insert v empty = (Node {value = Just v, left = Nothing, right = Nothing})
+insert v empty = (Node {value = Just v, left = Just empty, right = Just empty})
 -- insert v _ = error "not implemented"
 
 {-
