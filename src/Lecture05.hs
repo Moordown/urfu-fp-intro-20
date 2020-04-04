@@ -1,5 +1,4 @@
 module Lecture05 where
-import Data.List 
 
 {-
   05: Ленивость
@@ -107,7 +106,7 @@ inHowManyYearsChinaWins = 1 + length (takeWhile (\(a,b) -> a < b) (zip (yearGDP 
       import Data.List
 -}
 
-data Country = Country {name::String, cnt::Integer} deriving (Eq, Show)
+data Country = Country String Integer deriving (Eq, Show)
 
 allCountries :: [Country]
 allCountries =
@@ -117,7 +116,15 @@ allCountries =
   , Country "USA" 0
   , Country "GreatBritain" 0 ]
 
+sumall :: [Country] -> String -> Integer
+sumall events name = sum [c | (Country n c) <- events, n == name]
+
 stat :: [Country] -> [Country]
-stat events = foldl' (\a {} -> a) allCountries events
+stat events = 
+  [ Country "China" (sumall events "China")
+  , Country "Russia"  (sumall events "Russia")
+  , Country "Italy"  (sumall events "Italy")
+  , Country "USA"  (sumall events "USA")
+  , Country "GreatBritain"  (sumall events "GreatBritain") ]
 
 -- </Задачи для самостоятельного решения>
