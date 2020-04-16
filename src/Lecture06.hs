@@ -129,7 +129,14 @@ module Lecture06 where
   Если да, то приведите пример Γ и T и постройте дерево вывода Γ ⊢ x x : T;
   если нет, то докажите это (напишите, почему)
 
-  *Решение*
+  ОП. 
+  Предположим, что такой тип есть, тогда x по необходимости имеет тип, вида x : D -> T. 
+  Так как из редукции x x должен получиться тип T. Тогда в силу того, что x действует на "себя",
+  тип D должен по необходимости иметь вид D: D -> T. А это рекурсивная запись не дает нам при наших
+  возможностях конечно записать тип D. А так как мы не можем записать конечно тип D, то его тип будет 
+  зависеть от "глубины раскрывания". 
+  Тогда мы получаем противоречие с теоремой о единственности типа. Положим что Г ⊢ x : D -> T. 
+  Тогда типы D -> T и D -> T -> T отличаются как минимум количеством аргументов, что является противоречием.
 -}
 -- </Задачи для самостоятельного решения>
 
@@ -326,7 +333,14 @@ module Lecture06 where
   Убедитесь, что selfApp работает. Приведите терм `selfApp id` в нормальную форму
   и запишите все шаги β-редукции ->β.
 
-  selfApp id = ... ->β ...
+  selfApp id = (λx:∀X.X->X.x [∀X.X->X] x) (ΛX. λx:X.x)
+    =α (λx:∀X.X->X.x [∀Y.Y->Y] x) (id:∀Z.Z->Z)  
+    ->β (λx:(∀Y.Y->Y)->(∀Y.Y->Y).x x) (id:∀Z.Z->Z)
+    = (λx:∀Y1.∀Y2.Y1->Y1->Y2->Y2.x x) (id:∀Z.Z->Z)
+    // заметим, что ∀Y1.∀Y2.Y1->Y1->Y2->Y2 = Id -> Id, где Id - синоним типа ∀Z.Z->Z  
+    = (λx:Id->Id.x x) (id:∀Z.Z->Z)
+    ->β (id:∀Z.Z->Z) (id:∀Z.Z->Z)
+    = id id
 -}
 -- </Задачи для самостоятельного решения>
 
@@ -578,16 +592,16 @@ module Lecture06 where
 -}
 
 f :: [a] -> Int
-f = error "not implemented"
+f = length
 
 g :: (a -> b)->[a]->[b]
-g = error "not implemented"
+g = map
 
 q :: a -> a -> a
-q x y = error "not implemented"
+q x y = id x
 
 p :: (a -> b) -> (b -> c) -> (a -> c)
-p f g = error "not implemented"
+p f g = g . f
 
 {-
   Крестики-нолики Чёрча.
@@ -624,7 +638,10 @@ createRow x y z = \case
   Third -> z
 
 createField :: Row -> Row -> Row -> Field
-createField x y z = error "not implemented"
+createField x y z = \case
+  First -> x
+  Second -> y
+  Third -> z
 
 -- Чтобы было с чего начинать проверять ваши функции
 emptyField :: Field
@@ -633,17 +650,44 @@ emptyField = createField emptyLine emptyLine emptyLine
     emptyLine = createRow Empty Empty Empty
 
 setCellInRow :: Row -> Index -> Value -> Row
-setCellInRow r i v = error "not implemented"
+setCellInRow r i v = case i of 
+  First ->  createRow v (r Second) (r Third)
+  Second -> createRow (r First) v (r Third)
+  Third ->  createRow (r First) (r Second) v
 
 -- Возвращает новое игровое поле, если клетку можно занять.
 -- Возвращает ошибку, если место занято.
 setCell :: Field -> Index -> Index -> Value -> Either String Field
-setCell field i j v = error "not implemented"
+setCell field i j v = case (field i j) of
+  Zero ->  Left ("There is 'o' on " ++ show(i) ++ " " ++ show(j))
+  Cross -> Left ("There is 'x' on " ++ show(i) ++ " " ++ show(j))
+  Empty -> Right (\k -> if i == k then setCellInRow (field i) j v else field k)
 
 data GameState = InProgress | Draw | XsWon | OsWon deriving (Eq, Show)
 
+-- isWon :: Value -> [(Index, Index)] -> Bool
+-- isWon value = all (\v -> v = )
+
 getGameState :: Field -> GameState
-getGameState field = error "not implemented"
+getGameState field
+  | xsWon = XsWon
+  | osWon  = OsWon
+  | isInProgress   = InProgress
+  | otherwise      = Draw
+  where
+    indexes = [First, Second, Third]
+    columns = [[(i, j) | i <- indexes] | j <- indexes]
+    rows  =   [[(j, i) | i <- indexes] | j <- indexes]
+    diag1 =   [[(First, First), (Second, Second), (Third, Third)]]
+    diag2 =   [[(First, Third), (Second, Second), (Third, First)]]
+    triples = concat [rows, columns, diag1, diag2]
+    
+    getvalue = \(i,j) -> field i j
+    isWon = \value triple -> all (\v -> v == value) (map getvalue triple)
+    xsWon = any (isWon Cross) triples
+    osWon = any (isWon Zero) triples
+    isInProgress = any (any $ \v -> v == Empty) (map (map getvalue) triples)
+
 
 -- </Задачи для самостоятельного решения>
 
