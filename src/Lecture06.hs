@@ -119,7 +119,7 @@ module Lecture06 where
 
     Доказывать мы это, конечно, не будем, но убедиться в этом несложно.
     Действительно, если у терма есть типов, значит можно предъявить соответствующее
-    дерево вывода. Ну и сложно придумать, как так это дерево может изменится
+    дерево вывода. Ну и сложно придумать, как так это дерево может измениться
     и вывести другой тип при тех же начальных данных.
 -}
 
@@ -129,6 +129,7 @@ module Lecture06 where
   Если да, то приведите пример Γ и T и постройте дерево вывода Γ ⊢ x x : T;
   если нет, то докажите это (напишите, почему)
 
+<<<<<<< HEAD
   ОП. 
   Предположим, что такой тип есть, тогда x по необходимости имеет тип, вида x : D -> T. 
   Так как из редукции x x должен получиться тип T. Тогда в силу того, что x действует на "себя",
@@ -137,6 +138,10 @@ module Lecture06 where
   зависеть от "глубины раскрывания". 
   Тогда мы получаем противоречие с теоремой о единственности типа. Положим что Г ⊢ x : D -> T. 
   Тогда типы D -> T и D -> T -> T отличаются как минимум количеством аргументов, что является противоречием.
+=======
+  Пусть (x x) : T ∈ Г => [(T-App)] => x : T' -> T  и  x : T'.
+  Значит, чтобы (x x) был типизируемым x должен иметь сразу два типа => противоречие.
+>>>>>>> 586207997436e88a52750f341148e64ab935e857
 -}
 -- </Задачи для самостоятельного решения>
 
@@ -333,6 +338,7 @@ module Lecture06 where
   Убедитесь, что selfApp работает. Приведите терм `selfApp id` в нормальную форму
   и запишите все шаги β-редукции ->β.
 
+<<<<<<< HEAD
   selfApp id = (λx:∀X.X->X.x [∀X.X->X] x) (ΛX. λx:X.x)
     =α (λx:∀X.X->X.x [∀Y.Y->Y] x) (id:∀Z.Z->Z)  
     ->β (λx:(∀Y.Y->Y)->(∀Y.Y->Y).x x) (id:∀Z.Z->Z)
@@ -341,6 +347,19 @@ module Lecture06 where
     = (λx:Id->Id.x x) (id:∀Z.Z->Z)
     ->β (id:∀Z.Z->Z) (id:∀Z.Z->Z)
     = id id
+=======
+  selfApp id =
+    (λx:∀X.X->X.x [∀X.X->X] x) (ΛX. λx:X.x) ->β
+    (ΛX. λx:X.x) [∀X.X->X] (ΛX. λx:X.x) = [(E-TApp)] =
+--        ^                      ^
+--       id      [∀X.X->X]       id             -- т.е. selfApp действительно применила id к самой себе
+
+    (λx:∀X.X->X.x) (ΛX. λx:X.x) ->β
+    ΛX. λx:X.x =
+    id
+
+  Таким образом терм (x x), который был нетипизируем в STLC, оказался типизируем в System F.
+>>>>>>> 586207997436e88a52750f341148e64ab935e857
 -}
 -- </Задачи для самостоятельного решения>
 
@@ -598,7 +617,7 @@ g :: (a -> b)->[a]->[b]
 g = map
 
 q :: a -> a -> a
-q x y = id x
+q x _ = x
 
 p :: (a -> b) -> (b -> c) -> (a -> c)
 p f g = g . f
@@ -650,44 +669,51 @@ emptyField = createField emptyLine emptyLine emptyLine
     emptyLine = createRow Empty Empty Empty
 
 setCellInRow :: Row -> Index -> Value -> Row
-setCellInRow r i v = case i of 
-  First ->  createRow v (r Second) (r Third)
-  Second -> createRow (r First) v (r Third)
-  Third ->  createRow (r First) (r Second) v
+setCellInRow row i value = \j -> if i == j then value else row j
 
 -- Возвращает новое игровое поле, если клетку можно занять.
 -- Возвращает ошибку, если место занято.
 setCell :: Field -> Index -> Index -> Value -> Either String Field
-setCell field i j v = case (field i j) of
-  Zero ->  Left ("There is 'o' on " ++ show(i) ++ " " ++ show(j))
-  Cross -> Left ("There is 'x' on " ++ show(i) ++ " " ++ show(j))
-  Empty -> Right (\k -> if i == k then setCellInRow (field i) j v else field k)
+setCell field i j value = if isFree then Right newField else Left error
+  where
+    isFree = field i j == Empty
+    error = "There is '"++ show (field i j) ++"' on " ++ show i ++ " " ++ show j
+    newField = \k ->
+      if i == k
+      then setCellInRow (field i) j value
+      else field k
 
 data GameState = InProgress | Draw | XsWon | OsWon deriving (Eq, Show)
 
--- isWon :: Value -> [(Index, Index)] -> Bool
--- isWon value = all (\v -> v = )
+idx :: [Index]
+idx = [First, Second, Third]
+
+rows :: [[(Index, Index)]]
+rows = map (\k -> zip (repeat k) idx) idx
+
+winnerIndexes :: [[(Index, Index)]]
+winnerIndexes = concat [diagonal, diagonal', rows, columns]
+  where
+    diagonal = [zip idx idx]
+    diagonal' = [zip idx (reverse idx)]
+    columns = map (\k -> zip idx (repeat k)) idx
+
+winnerSum :: Field -> [(Index, Index)] -> Int
+winnerSum field indexes = sum $ map (\(i, j) -> toIndicator (field i j)) indexes
+  where
+    toIndicator Empty = 0
+    toIndicator Cross = 1
+    toIndicator Zero = (-1)
 
 getGameState :: Field -> GameState
-getGameState field
-  | xsWon = XsWon
-  | osWon  = OsWon
-  | isInProgress   = InProgress
-  | otherwise      = Draw
+getGameState field = case winnerIndicator of
+  [] -> if fieldContainsEmpty then InProgress else Draw
+  3:_ -> XsWon
+  _ -> OsWon
   where
-    indexes = [First, Second, Third]
-    columns = [[(i, j) | i <- indexes] | j <- indexes]
-    rows  =   [[(j, i) | i <- indexes] | j <- indexes]
-    diag1 =   [[(First, First), (Second, Second), (Third, Third)]]
-    diag2 =   [[(First, Third), (Second, Second), (Third, First)]]
-    triples = concat [rows, columns, diag1, diag2]
-    
-    getvalue = \(i,j) -> field i j
-    isWon = \value triple -> all (\v -> v == value) (map getvalue triple)
-    xsWon = any (isWon Cross) triples
-    osWon = any (isWon Zero) triples
-    isInProgress = any (any $ \v -> v == Empty) (map (map getvalue) triples)
-
+    winnerIndicator = dropWhile doesNotHaveWinner $ map (winnerSum field) winnerIndexes
+    fieldContainsEmpty = any (\(i, j) -> field i j == Empty) (concat rows)
+    doesNotHaveWinner sum = sum /= 3 && sum /= (-3)
 
 -- </Задачи для самостоятельного решения>
 
