@@ -206,21 +206,25 @@ instance Foldable FileTree where
   Реализовывать инстансы не нужно.
 -}
 
-data Exception = Exception String
-data JSONConvertble a = JSONConvertble {toJSON :: String}
-data Severity = 
+data JSON = JSON String
+
+class Exception exception where 
+  getMsg :: exception -> String
+
+data SEVERITY = 
   DEBUG
   | INFO
   | ERROR
   | WARN
-data ExceptionAPI a = ExceptionAPI (JSONConvertble a) Severity
 
-data BDMEssage = BDMEssage {bdMessage :: String}
-data BDError a = BDError {bdErrorexception :: ExceptionAPI a, bdErrorMessage:: BDMEssage}
+class Exception exception => ExceptionAPI exception where
+  getJSON :: exception -> JSON
+  getSEVERITY :: exception -> SEVERITY
 
-data ContexInfo a = ContexInfo {domainContextInfo::JSONConvertble a}
-data DomainError a b = DomainError {domainErrorexception :: ExceptionAPI a, domainErrorContextInfo:: ContexInfo b}
+class Exception exception => BDExeption exception where
+  getBDMessage :: exception -> String
 
-
+class Exception exception => DomainException exception where
+  getContextInfo :: exception -> JSON
 
 -- </Задачи для самостоятельного решения>
