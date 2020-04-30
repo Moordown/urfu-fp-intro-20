@@ -41,18 +41,20 @@ import qualified Data.IntMap as Map
 data Stack a = Stack [a] deriving (Eq, Show)
 
 createStack :: Stack a
-createStack = error "not implemented"
+createStack = Stack []
 
 -- Обратите внимание, что все структуры данных неизменяемые (immutable). Значит, если операция
 -- предполагает изменение структуры, то она просто должна возвращать новую уже изменённую версию.
 push :: Stack a -> a -> Stack a
-push stack x = error "not implemented"
+push (Stack xs) x = Stack ([x] ++ xs)
 
 pop :: Stack a -> Maybe (Stack a)
-pop stack = error "not implemented"
+pop (Stack [])        = Nothing
+pop (Stack (x : xs)) = Just (Stack xs)
 
 peek :: Stack a -> Maybe a
-peek stack = error "not implemented"
+peek (Stack [])     = Nothing
+peek (Stack (x:_))  = Just x
 
 -- </Задачи для самостоятельного решения>
 
@@ -170,17 +172,20 @@ dequeue' (q:qs) = (q, qs)             -- возвращаем (элемент, �
 data Queue a = Queue [a] [a] deriving (Eq, Show)
 
 createQueue :: Queue a
-createQueue = error "not implemented"
+createQueue = Queue [] []
 
 enqueue :: Queue a -> a -> Queue a
-enqueue queue x = error "not implemented"
+enqueue (Queue enc dec) x = Queue (x:enc) dec 
 
 -- если очередь пустая возвращает ошибку
 dequeue :: Queue a -> (a, Queue a)
-dequeue queue = error "not implemented"
+dequeue (Queue [] [])         = error "try dequeue from empty Queue"
+dequeue (Queue enc [])        = dequeue (Queue [] (foldl (flip (:)) [] enc))
+dequeue (Queue enc (xd:dec))  = (xd, Queue enc dec)
 
 isEmpty :: Queue a -> Bool
-isEmpty queue = error "not implemented"
+isEmpty (Queue [] []) = True
+isEmpty _             = False
 
 -- </Задачи для самостоятельного решения>
 
@@ -383,6 +388,29 @@ class IntArray a where
   update :: a -> Int -> Int -> a   -- обновить элемент по индексу
   (#) :: a -> Int -> Int           -- получить элемент по индексу
 
+instance IntArray (Array Int Int) where 
+  fromList pairs           = let 
+                             mn = minimum (map fst pairs) 
+                             mx = maximum (map fst pairs)
+                           in array (mn, mx) pairs 
+  toList array             = assocs array 
+  update array index value = array // [(index, value)]
+  (#) array index          = array # index  
+
+  
+instance IntArray (Map.IntMap Int) where 
+  fromList = error "not implemented"
+  toList = error "not implemented"
+  update = error "not implemented"
+  (#) = error "not implemented"  
+
+  
+instance IntArray [Int] where 
+  fromList = error "not implemented"
+  toList = error "not implemented"
+  update = error "not implemented"
+  (#) = error "not implemented"  
+
 -- Сортирует массив целых неотрицательных чисел по возрастанию
 countingSort :: forall a. IntArray a => [Int] -> [Int]
 countingSort = error "not implemented"
@@ -399,7 +427,6 @@ countingSort = error "not implemented"
 
 sorted :: [Int]
 sorted = countingSort @[Int] [2,2,2,3,3,3,1,1,1]
-
 -- </Задачи для самостоятельного решения>
 
 {- Сылки

@@ -221,4 +221,6 @@ data BDError a = BDError {bdErrorexception :: ExceptionAPI a, bdErrorMessage:: B
 data ContexInfo a = ContexInfo {domainContextInfo::JSONConvertble a}
 data DomainError a b = DomainError {domainErrorexception :: ExceptionAPI a, domainErrorContextInfo:: ContexInfo b}
 
+
+
 -- </Задачи для самостоятельного решения>
