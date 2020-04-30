@@ -381,6 +381,8 @@ emptySet = Set.intersection evenSet oddSet
   https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html?highlight=ambiguous#extension-AllowAmbiguousTypes
 -}
 
+
+
 -- Названия методов можно менять
 class IntArray a where
   fromList :: [(Int, Int)] -> a    -- создать из списка пар [(index, value)]
@@ -388,32 +390,73 @@ class IntArray a where
   update :: a -> Int -> Int -> a   -- обновить элемент по индексу
   (#) :: a -> Int -> Int           -- получить элемент по индексу
 
+zeroesArr :: Array Int Int -> Int -> Int
+zeroesArr arr index = ans
+  where
+    f (a, b) = a
+    s (a, b) = b
+    ans = if index < (f (bounds arr)) || index > (s (bounds arr)) 
+          then 0 
+          else arr ! index
+
+insertInArr :: Array Int Int -> Int -> Int -> Array Int Int
+insertInArr arr index value = ans
+  where
+    f (a, b) = a
+    s (a, b) = b
+    ans = if index < (f (bounds arr)) || index > (s (bounds arr)) 
+          then arr 
+          else arr // [(index, value)]
+
+
 instance IntArray (Array Int Int) where 
   fromList pairs           = let 
-                             mn = minimum (map fst pairs) 
-                             mx = maximum (map fst pairs)
-                           in array (mn, mx) pairs 
+                                _min [] = 0
+                                _min arr = minimum arr 
+                                _max [] = -1
+                                _max arr = maximum arr
+                                mn = _min (map fst pairs) 
+                                mx = _max (map fst pairs)
+                             in array (mn, mx) pairs 
   toList array             = assocs array 
   update array index value = array // [(index, value)]
-  (#) array index          = array # index  
+  (#) array index          = array ! index
 
+zeroes :: Maybe Int -> Int
+zeroes (Just a) = a
+zeroes Nothing  = 0
   
 instance IntArray (Map.IntMap Int) where 
-  fromList = error "not implemented"
-  toList = error "not implemented"
-  update = error "not implemented"
-  (#) = error "not implemented"  
+  fromList values       = Map.fromList values 
+  toList map            = Map.assocs map
+  update map key value  = Map.insert key value map  
+  (#) map key           = zeroes $ map Map.!? key
 
   
 instance IntArray [Int] where 
-  fromList = error "not implemented"
-  toList = error "not implemented"
-  update = error "not implemented"
-  (#) = error "not implemented"  
+  fromList pairs               = map snd pairs
+  toList array                 = zip (range (0, length array)) array
+  
+  update [] _ _                = error "can't update empty list"
+  update (x:array) 0 value     = value : array
+  update (x:array) index value = x : (update array (index - 1) value)
+
+  (#) [] _                     = error "can't get from empty list"
+  (#) (x:array) 0              = x
+  (#) (x:array) index          = array # (index - 1)   
 
 -- Сортирует массив целых неотрицательных чисел по возрастанию
 countingSort :: forall a. IntArray a => [Int] -> [Int]
-countingSort = error "not implemented"
+countingSort [] = []
+countingSort values = ans
+  where 
+    intArray = fromList [(i, 0) | i <- range (0, maximum values)] :: a
+    inc array index = update array index $ 1 + array # index :: a
+    countArray = foldl (\arr index -> inc arr index) intArray values
+
+    repeat (v, 0) = []
+    repeat (v, c) = v : (repeat (v, c - 1))
+    ans = concat (map repeat (toList countArray)) 
 
 {-
   Tак можно запустить функцию сортировки с использованием конкретной реализацией массива:
