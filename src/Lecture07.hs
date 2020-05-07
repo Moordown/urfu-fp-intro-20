@@ -1,6 +1,5 @@
-{-# OPTIONS_GHC -fno-warn-orphans -fno-warn-unused-imports #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE RecordWildCards #-}
 module Lecture07 where
 
 import Lecture07.Money
@@ -65,42 +64,30 @@ data Expr
   | Abs Expr
   deriving Eq
 
-bracketize :: Expr -> String
-bracketize (Number n)               = (show n)
-bracketize (UnaryMinus (Number n))  = "-" ++ (show n)
-bracketize (UnaryMinus e)           = "-" ++ (bracketize e)
-bracketize e                        = "(" ++ (show e) ++ ")"
-
-cases :: Expr -> String -> Expr -> String
-cases e1 s e2                     = (bracketize e1) ++ s ++ (bracketize e2)
-
 instance Show Expr where
-  show num@(Number n)         = bracketize num
-  show minus@(UnaryMinus e)   = bracketize minus
-  show (Plus e1 e2)           = cases e1 " + " e2
-  show (Minus e1 e2)          = cases e1 " - " e2
-  show (Mult e1 e2)           = cases e1 " * " e2
-  show (Abs e)                = "|" ++ (show e) ++ "|"
+  show = \case
+    Number n -> show n
+    Plus x y -> show x ++ " + " ++ show y
+    Minus x y -> show x ++ " - " ++ show y
+    Mult x y -> "(" ++ show x ++ " * " ++ show y ++ ")"
+    UnaryMinus e -> "-(" ++ show e ++ ")"
+    Abs e -> "|" ++ show e ++ "|"
 
 {-
   Реализуйте instance Semigroup для вектора:
 -}
 newtype Vec a = Vec { unVec :: [a] } deriving (Eq, Show)
 
-concat' :: Vec a -> Vec a -> Vec a
-concat' (Vec x1) (Vec x2) = Vec (x1 ++ x2) 
-
-instance (Num a) => Semigroup (Vec a) where 
-  Vec (x:xs) <> Vec (y:ys) = concat' (Vec [x + y]) ((Vec xs) <> (Vec ys)) 
-  _ <> _ = Vec []
+instance Num a => Semigroup (Vec a) where
+ (<>) (Vec a) (Vec b) = Vec $ zipWith (+) a b
 
 {-
   Реализуйте instance Semigroup для типа для логгирования:
 -}
 newtype LogEntry = LogEntry { unLogEntry :: String } deriving (Eq, Show)
 
-instance Semigroup LogEntry where 
-  LogEntry e1 <> LogEntry e2 = LogEntry (e1 ++ e2)
+instance Semigroup LogEntry where
+  (<>) (LogEntry c) (LogEntry c') = LogEntry (c <> c')
 
 {-
   В `src/Lecture07/Money.hs` определены:
@@ -115,12 +102,21 @@ instance Semigroup (Money USD) where
 instance Semigroup (Money RUB) where
   m1 <> m2 = mkRubbles ((getMoney m1) + (getMoney m2))
 
+instance Semigroup (Money USD) where
+  (<>) a b = mkDollars $ getMoney a + getMoney b
+
+instance Semigroup (Money RUB) where
+  (<>) a b = mkRubbles $ getMoney a + getMoney b
+
 {-
   Реализуйте инстанс Functor для ExactlyOne
 -}
 data ExactlyOne a = ExactlyOne a deriving (Eq, Show)
 instance Functor ExactlyOne where
   fmap f (ExactlyOne c) =  ExactlyOne (f c)
+
+instance Functor ExactlyOne where
+  fmap f (ExactlyOne x) = ExactlyOne (f x)
 
 {-
   Реализуйте инстанс Functor для `Maybe a`
@@ -130,6 +126,11 @@ instance Functor Maybe' where
   fmap f (Nothing') =  Nothing'
   fmap f (Just' a) = Just' (f a)
 
+instance Functor Maybe' where
+  fmap f = \case
+    Just' x -> Just' $ f x
+    Nothing' -> Nothing'
+
 {-
   Реализуйте инстанс Functor для `List a`
 -}
@@ -137,6 +138,11 @@ data List a = Nil | Cons a (List a) deriving (Eq, Show)
 instance Functor List where
   fmap f Nil =  Nil
   fmap f (Cons x xs)  = Cons (f x) (fmap f xs)
+
+instance Functor List where
+  fmap f = \case
+    Nil -> Nil
+    Cons x xs -> Cons (f x) (fmap f xs)
 
 {-
   `FileTree a` — тип для представления дерева файловой системы.
@@ -185,10 +191,10 @@ latestModified = getMax . foldMap (\FileInfo{..} -> Max modified)
 -}
 
 instance Foldable FileTree where
-  foldMap f (Empty) = mempty
-  foldMap f (File _ info) = f info
-  foldMap f (Dir _ []) = mempty
-  foldMap f (Dir name (x:xs)) = foldMap f x `mappend` foldMap f (Dir name xs)
+  foldMap f Empty = mempty
+  foldMap f (File _ s) = f s
+  foldMap f (Dir _ xs) = fold $ map (foldMap f) xs
+
 
 {-
   В этом задании вам необходимо придумать и написать иерархию исключений
