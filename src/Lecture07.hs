@@ -97,10 +97,6 @@ instance Semigroup LogEntry where
 
   Реализуйте инстансы Semigroup для Money a.
 -}
-instance Semigroup (Money USD) where
-  m1 <> m2 = mkDollars ((getMoney m1) + (getMoney m2))
-instance Semigroup (Money RUB) where
-  m1 <> m2 = mkRubbles ((getMoney m1) + (getMoney m2))
 
 instance Semigroup (Money USD) where
   (<>) a b = mkDollars $ getMoney a + getMoney b
@@ -112,8 +108,6 @@ instance Semigroup (Money RUB) where
   Реализуйте инстанс Functor для ExactlyOne
 -}
 data ExactlyOne a = ExactlyOne a deriving (Eq, Show)
-instance Functor ExactlyOne where
-  fmap f (ExactlyOne c) =  ExactlyOne (f c)
 
 instance Functor ExactlyOne where
   fmap f (ExactlyOne x) = ExactlyOne (f x)
@@ -122,9 +116,6 @@ instance Functor ExactlyOne where
   Реализуйте инстанс Functor для `Maybe a`
 -}
 data Maybe' a = Just' a | Nothing' deriving (Eq, Show)
-instance Functor Maybe' where
-  fmap f (Nothing') =  Nothing'
-  fmap f (Just' a) = Just' (f a)
 
 instance Functor Maybe' where
   fmap f = \case
@@ -135,9 +126,6 @@ instance Functor Maybe' where
   Реализуйте инстанс Functor для `List a`
 -}
 data List a = Nil | Cons a (List a) deriving (Eq, Show)
-instance Functor List where
-  fmap f Nil =  Nil
-  fmap f (Cons x xs)  = Cons (f x) (fmap f xs)
 
 instance Functor List where
   fmap f = \case
@@ -211,20 +199,5 @@ instance Foldable FileTree where
 
   Реализовывать инстансы не нужно.
 -}
-
-data Exception = Exception String
-data JSONConvertble a = JSONConvertble {toJSON :: String}
-data Severity = 
-  DEBUG
-  | INFO
-  | ERROR
-  | WARN
-data ExceptionAPI a = ExceptionAPI (JSONConvertble a) Severity
-
-data BDMEssage = BDMEssage {bdMessage :: String}
-data BDError a = BDError {bdErrorexception :: ExceptionAPI a, bdErrorMessage:: BDMEssage}
-
-data ContexInfo a = ContexInfo {domainContextInfo::JSONConvertble a}
-data DomainError a b = DomainError {domainErrorexception :: ExceptionAPI a, domainErrorContextInfo:: ContexInfo b}
 
 -- </Задачи для самостоятельного решения>
