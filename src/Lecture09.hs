@@ -215,12 +215,12 @@ showUnfinishedTodo todoList = do
 
 guessGame :: Integer -> IO ()
 guessGame number = do
-  putStrLn "Your number: "
+  putStr "Your number: "
   input <- getLine
   let num = read input :: Integer
-  if number < num then putStrLn "Too big" >> guessGame number
-  else if number == num then putStrLn "Yep, that's the number!"
-  else putStrLn "Too small" >> guessGame number
+  if number < num then putStrLn "> Too big" >> guessGame number
+  else if number == num then putStrLn "> Yep, that's the number!"
+  else putStrLn "> Too small" >> guessGame number
     
 
 playGuessGame :: IO ()
