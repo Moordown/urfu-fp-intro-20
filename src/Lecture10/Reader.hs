@@ -60,20 +60,48 @@ persons =
   , Person 9 "Антонов" "Юрий" "Васильевич" Male Nothing
   ]
 
+findById' :: PersonId -> [Person] -> Maybe Person
+findById' pId [] = Nothing
+findById' pId (p:ps) = if id p == pId 
+  then Just p
+  else findById' pId ps
+ 
 -- Поиск персоны по номеру
 findById :: PersonId -> Reader [Person] (Maybe Person)
-findById pId = error "not implemented"
+findById pId = do 
+  persons <- ask
+  return $ findById' pId persons 
+
+singleEnding  :: String
+singleEnding  = "Разрешите предложить Вам наши услуги."
+
+pairEnding    :: String
+pairEnding    = "Разрешите предложить вам наши услуги."
 
 processSingle :: Person -> String
-processSingle p = error "not implemented"
+processSingle p = intercalate "\n" [intro, singleEnding]
+  where 
+    names        = (name p) ++ " " ++ (surname p)
+    introEnding  = if sex p == Male 
+      then "ый"
+      else "ая"
+    intro        = "Уважаем" ++ introEnding ++ " " ++ names ++ "!"
 
 processPair :: Person -> Person -> String
-processPair husband wife = error "not implemented"
+processPair h w = intercalate "\n" [intro, pairEnding]
+  where 
+    namesh       = (name h) ++ " " ++ (surname h)
+    namesw       = (name w) ++ " " ++ (surname w)
+    intro        = "Уважаемые " ++ namesh ++ " " ++ namesw ++ "!"
 
 processPerson :: PersonId -> Reader [Person] (Maybe String)
-processPerson pId = error "not implemented"
+processPerson pId = do
+  mayBePerson <- findById pId
+  case mayBePerson of
+    Just p    -> return $ Just $ processSingle p
+    Nothing   -> return $ Nothing
 
 processPersons :: [PersonId] -> [Maybe String]
-processPersons personIds = error "not implemented"
+processPersons personIds = map (\pId -> runReader (processPerson pId) persons) personIds
 
 -- </Задачи для самостоятельного решения>

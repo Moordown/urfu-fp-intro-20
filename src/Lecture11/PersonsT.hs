@@ -35,7 +35,7 @@ emptyStats :: PersonSearchStats
 emptyStats = PersonSearchStats 0 0
 
 newtype PersonsT a = PersonsT
-  { runPersonsT :: NotImplemented }
+  { runPersonsT :: (ReaderT [Person] (StateT PersonSearchStats (Writer [String])) a) }
   deriving
     ( Functor
     , Applicative
