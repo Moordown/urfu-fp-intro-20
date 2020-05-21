@@ -57,7 +57,7 @@ findById pId = do
   let person' = findById' pId persons'
   case person' of 
     Just _        -> tell  ["Found person: " ++ (show pId)]
-    Nothing       -> tell  ["Indalid id: "   ++ (show pId) ]
+    Nothing       -> tell  ["Invalid id: "   ++ (show pId) ]
   return $ person' 
 
 processPerson :: PersonId -> PersonsT (Maybe String)
