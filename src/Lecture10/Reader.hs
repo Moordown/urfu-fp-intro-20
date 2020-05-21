@@ -25,7 +25,7 @@ import Prelude hiding (id)
   Разрешите предложить Вам наши услуги.
 """
 
-  Семейным парам шлется одно письмо вида
+  Семейным парам шлется одно(?) письмо вида
 
 """
   Уважаемые Имя_мужа Отчество_мужа и Имя_жены Отчество_жены!
@@ -92,14 +92,18 @@ processPair h w = intercalate "\n" [intro, pairEnding]
   where 
     namesh       = (name h) ++ " " ++ (surname h)
     namesw       = (name w) ++ " " ++ (surname w)
-    intro        = "Уважаемые " ++ namesh ++ " " ++ namesw ++ "!"
+    intro        = "Уважаемые " ++ namesh ++ " и " ++ namesw ++ "!"
 
 processPerson :: PersonId -> Reader [Person] (Maybe String)
 processPerson pId = do
-  mayBePerson <- findById pId
-  case mayBePerson of
-    Just p    -> return $ Just $ processSingle p
-    Nothing   -> return $ Nothing
+  one <- findById pId
+  two <- case one of
+    Just (Person _ _ _ _ _ (Just tId)) -> findById tId
+    _                                  -> return $ Nothing
+  return $ case (one, two) of
+    (Just o, Just t) -> Just $ processPair o t
+    (Just o, _)      -> Just $processSingle o
+    _                -> Nothing
 
 processPersons :: [PersonId] -> [Maybe String]
 processPersons personIds = map (\pId -> runReader (processPerson pId) persons) personIds
