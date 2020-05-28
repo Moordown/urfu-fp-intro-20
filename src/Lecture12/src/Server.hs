@@ -8,7 +8,7 @@ import Servant as S
 
 import App
 import API
-import Handlers (getSessions, getSeats, postPreliminary)
+import Handlers (getSessions, getSeats, getCheckout, getRefund, getBooking, postPreliminary)
 import Utils
 
 {-
@@ -23,6 +23,9 @@ bookingServer :: MonadIO m => ServerT BookMovieAPI (AppT m)
 bookingServer = (getSessions
   :<|> getSeats)
   :<|> postPreliminary
+  :<|> getCheckout
+  :<|> getRefund
+  :<|> getBooking
 
 {-
   Функция, которая создает servant приложение `Application`.

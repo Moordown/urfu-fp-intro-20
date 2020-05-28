@@ -20,6 +20,15 @@ getSessions = getMovieSessions
 getSeats :: MonadIO m => MovieSessionId -> AppT m [Seat]
 getSeats = getSeatsBySessionId
 
+getCheckout :: MonadIO m => BookingId -> AppT m String
+getCheckout = getBookingCheckout
+
+getRefund :: MonadIO m => BookingId -> AppT m String
+getRefund = getBookingRefund
+
+getBooking :: MonadIO m => AppT m [Booking]
+getBooking = getBookingInfo
+
 postPreliminary :: MonadIO m => MovieSessionId -> SeatId -> AppT m BookingId
 postPreliminary msId seatId = do
   bookings <- createPreliminary msId seatId

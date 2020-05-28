@@ -9,9 +9,10 @@ import Database.SQLite.Simple.ToField
 import Database.SQLite.Simple.FromField
 import Servant.API
 import GHC.Generics
+-- import Control.Monad
 
-import DB.MovieSession
-import DB.Seat
+import DB.MovieSession (MovieSessionId)
+import DB.Seat (SeatId)
 import DB.Internal
 
 {-
@@ -34,8 +35,8 @@ newtype BookingId = BookingId
 data Booking = Booking
   { bookingId :: BookingId
   , seatId :: SeatId
-  , isPreliminary :: Bool
   , movieSessionId :: MovieSessionId
+  , isPreliminary :: Bool
   , createdAt :: UTCTime
   } deriving (Eq, Show, Generic)
 -- Класс Generic отвечает за универсальное кодирование типа, т.е. за  такое представление,
@@ -56,8 +57,48 @@ instance FromJSON Booking
   Если оно существует и прошло меньше 10 минут от создания, то бронирование
   проходит успешно, иначе необходимо вернуть сообщение об ошибке в JSON формате.
 -}
-tryBook
+
+tenMinutes :: NominalDiffTime
+tenMinutes = fromInteger 600 :: NominalDiffTime
+
+getBookingCheckout
   :: DBMonad m
   => BookingId
-  -> m Bool
-tryBook = undefined
+  -> m String
+getBookingCheckout bId = runSQL $ \conn -> do
+  bookings <- query conn ("SELECT id, seat_id, movie_session_id, is_preliminary, created_at from bookings where id = ?") (bId) :: IO [Booking]
+  if (length bookings == 0)
+    then return "Invalid booking index"
+    else do
+      let booking = bookings !! 0
+      curTime <- getCurrentTime
+      let rotten = (diffUTCTime curTime (createdAt booking)) >= tenMinutes
+      if not (isPreliminary booking)
+        then return "Booking already checkout"
+        else do
+          if rotten 
+            then do
+              execute conn "DELETE FROM bookings WHERE id = ?" (bId)
+              return "Booking was delete because it's rotten"
+            else do
+              execute conn "DELETE FROM bookings WHERE id = ?" (bId)
+              execute conn "UPDATE seats SET available = false WHERE id = ?" (seatId booking)
+              return "Success booking checkout"
+
+getBookingRefund
+  :: DBMonad m
+  => BookingId
+  -> m String
+getBookingRefund bId = runSQL $ \conn -> do
+  bookings <- query conn ("SELECT id, seat_id, movie_session_id, is_preliminary, created_at from bookings where id = ?") (bId) :: IO [Booking]
+  if (length bookings == 0)
+    then return "Invalid booking index"
+    else do
+      execute conn "DELETE FROM bookings WHERE id = ?" (bId)
+      return "Booking was successfully delete"
+
+getBookingInfo
+  :: DBMonad m
+  => m [Booking]
+getBookingInfo = runSQL $ \conn -> do
+  query_ conn "SELECT * from bookings"
